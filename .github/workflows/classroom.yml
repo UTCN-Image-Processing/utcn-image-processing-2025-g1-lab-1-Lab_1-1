@@ -1,0 +1,48 @@
+name: Build and Test Student Submission
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Check out the "Lab1-Tests" repository itself
+      - name: Checkout Tests Repo
+        uses: actions/checkout@v3
+        with:
+          # This checks out the *current* private test repo
+          # so we have test_lab1.cpp, images, etc.
+          path: tests-repo
+
+      # 2) Check out the student's submission repository
+      - name: Checkout Student Submission
+        uses: actions/checkout@v3
+        with:
+          repository: my-org/Lab1-StudentSubmission
+          path: student-repo
+
+      # 3) Replace or copy student’s lab1.cpp into the tests "src" folder
+      #    or, conversely, copy test code into student's folder. You can choose the direction.
+      - name: Copy Student Code
+        run: |
+          cp student-repo/src/lab1.cpp tests-repo/src/lab1.cpp
+          cp student-repo/src/lab1.h   tests-repo/src/lab1.h
+
+      # 4) Build: (Install dependencies, run CMake, etc.)
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake g++ libopencv-dev
+
+      - name: Configure (CMake)
+        run: cmake -S tests-repo -B tests-repo/build
+
+      - name: Build
+        run: cmake --build tests-repo/build
+
+      # 5) Run tests (ctest)
+      - name: Test
+        run: ctest --test-dir tests-repo/build --verbose
